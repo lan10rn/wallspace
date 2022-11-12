@@ -1,5 +1,5 @@
 body{
-   background-color: rgb(255, 255, 255);
+   background-color: rgb(245, 245, 220) ;
 }
 #qw{
   font-family: 'Segoe UI','Open Sans', 'Helvetica Neue', sans-serif;
@@ -40,7 +40,8 @@ td img:hover {
 td img{
     width: 95%;
     border-radius: 40px;
-    box-shadow: -20px 6px 20px rgb(112, 41, 99);
+    box-shadow: 0 0 40px rgb(240, 0, 196);
+    border:5px solid #2e9b95;
 }
 .curveback{
     background-color: white;
