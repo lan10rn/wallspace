@@ -1,77 +1,31 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
 import '../styles/WallpaperDetail.css';
 
 function WallpaperDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [wallpaper, setWallpaper] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    const fetchWallpaperDetails = async () => {
-      try {
-        setLoading(true);
-        const url = `https://wallhaven.cc/api/v1/w/${id}`;
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch wallpaper: ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        if (data.data) {
-          setWallpaper(data.data);
-        } else {
-          setError('Wallpaper not found');
-        }
-      } catch (err) {
-        setError(`Error: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWallpaperDetails();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className="detail-page">
-        <div className="detail-loading">
-          <p>⏳ Loading wallpaper details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="detail-page">
-        <div className="detail-error">
-          <p>{error}</p>
-          <button onClick={() => navigate('/')} className="back-btn">
-            ← Back to Search
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!wallpaper) {
-    return (
-      <div className="detail-page">
-        <div className="detail-error">
-          <p>Wallpaper not found</p>
-          <button onClick={() => navigate('/')} className="back-btn">
-            ← Back to Search
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const wallpaper = {
+    id,
+    short_url: `Sample Wallpaper ${id}`,
+    path: 'https://via.placeholder.com/1200x675?text=Wallpaper+Preview',
+    resolution: '1920x1080',
+    ratio: '16:9',
+    file_size: 2 * 1024 * 1024,
+    date_added: Math.floor(Date.now() / 1000),
+    views: 12345,
+    favorites: 678,
+    category_id: 100,
+    purity: 'sfw',
+    tags: [
+      { id: 'sample-1', name: 'sample' },
+      { id: 'sample-2', name: 'frontend-only' },
+    ],
+    thumbs: {
+      small: 'https://via.placeholder.com/320x180?text=Small+Thumb',
+      original: 'https://via.placeholder.com/640x360?text=Original+Thumb',
+    },
+    url: '#',
+  };
 
   return (
     <div className="detail-page">
