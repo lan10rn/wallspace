@@ -58,3 +58,4 @@ See [SETUP.md](SETUP.md) for detailed setup instructions, API documentation, and
 ## License
 
 ISC
+<img width="2560" height="1318" alt="image" src="https://github.com/user-attachments/assets/99f0e35c-8250-4d1e-bf7a-620cfc80240c" />
