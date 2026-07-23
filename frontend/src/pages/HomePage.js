@@ -3,7 +3,8 @@ import Navbar from '../components/Navbar';
 import SearchForm from '../components/SearchForm';
 import WallpaperGrid from '../components/WallpaperGrid';
 import { Modal } from '../components/ui/Modal';
-import { Sparkles, AlertCircle, RefreshCw, Layers } from 'lucide-react';
+import { AIGeneratorModal } from '../components/AIGeneratorModal';
+import { Sparkles, AlertCircle, RefreshCw, Layers, Wand2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -17,6 +18,7 @@ export default function HomePage() {
   const [purity, setPurity] = useState('100');
   const [sorting, setSorting] = useState('date_added');
   const [selectedWallpaper, setSelectedWallpaper] = useState(null);
+  const [isAIStudioOpen, setIsAIStudioOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   // Toggle Theme (Dark/Light)
@@ -93,10 +95,18 @@ export default function HomePage() {
     fetchWallpapers('abstract');
   };
 
+  const handleSaveAIToGrid = (newWallpaper) => {
+    setWallpapers((prev) => [newWallpaper, ...prev]);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/30">
       {/* Navbar Header */}
-      <Navbar isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      <Navbar
+        isDarkMode={isDarkMode}
+        toggleTheme={toggleTheme}
+        onOpenAIStudio={() => setIsAIStudioOpen(true)}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 flex flex-col items-center">
@@ -107,19 +117,30 @@ export default function HomePage() {
           <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center justify-center space-y-4">
             <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-primary/20 text-primary border border-primary/30 text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Wallhaven API Backend Connected</span>
+              <span>Wallhaven & Local AI Model Connected</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-foreground text-center">
-              Discover High Resolution{' '}
+              Discover & Generate{' '}
               <span className="bg-gradient-to-r from-primary via-indigo-400 to-accent bg-clip-text text-transparent">
                 Wallpapers
               </span>
             </h1>
 
             <p className="text-sm sm:text-base text-muted-foreground max-w-xl text-center">
-              Browse thousands of ultra-high-definition wallpapers curated from Wallhaven. Filter by categories, purity rating, and resolution with sleek Material UI cards.
+              Browse Wallhaven's gallery or launch the AI Studio to render custom wallpapers locally on your PC.
             </p>
+
+            <div className="flex items-center space-x-3 pt-2">
+              <Button
+                variant="default"
+                onClick={() => setIsAIStudioOpen(true)}
+                icon={Wand2}
+                className="px-6 py-2.5 rounded-full font-bold shadow-lg shadow-primary/25"
+              >
+                Launch AI Studio
+              </Button>
+            </div>
 
             {/* Search Form component */}
             <div className="pt-4 w-full max-w-3xl mx-auto">
@@ -176,7 +197,7 @@ export default function HomePage() {
           <div className="flex items-center space-x-2 justify-center">
             <Layers className="w-4 h-4 text-primary" />
             <span className="font-semibold text-foreground">WallSpace</span>
-            <span>— Designed with Shadcn & Material UI principles</span>
+            <span>— Designed with Shadcn, Material UI & Local AI</span>
           </div>
           <div className="text-center">
             Powered by <a href="https://wallhaven.cc" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">Wallhaven API</a>
@@ -189,6 +210,13 @@ export default function HomePage() {
         isOpen={Boolean(selectedWallpaper)}
         onClose={() => setSelectedWallpaper(null)}
         wallpaper={selectedWallpaper}
+      />
+
+      {/* AI Studio Generator Modal */}
+      <AIGeneratorModal
+        isOpen={isAIStudioOpen}
+        onClose={() => setIsAIStudioOpen(false)}
+        onSaveToGrid={handleSaveAIToGrid}
       />
     </div>
   );

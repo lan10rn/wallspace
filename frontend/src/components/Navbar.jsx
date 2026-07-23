@@ -1,8 +1,8 @@
 import React from 'react';
-import { Sparkles, Sun, Moon, Image as ImageIcon, Globe } from 'lucide-react';
+import { Sparkles, Sun, Moon, Image as ImageIcon, Globe, Wand2 } from 'lucide-react';
 import { Button } from './ui/Button';
 
-export default function Navbar({ isDarkMode, toggleTheme }) {
+export default function Navbar({ isDarkMode, toggleTheme, onOpenAIStudio }) {
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-border/40 shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -28,6 +28,17 @@ export default function Navbar({ isDarkMode, toggleTheme }) {
 
         {/* Action Controls */}
         <div className="flex items-center space-x-3">
+          {/* AI Generator Studio Trigger */}
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onOpenAIStudio}
+            icon={Wand2}
+            className="shadow-md shadow-primary/20 text-xs px-4 rounded-full font-bold"
+          >
+            AI Studio
+          </Button>
+
           <a
             href="https://wallhaven.cc"
             target="_blank"
