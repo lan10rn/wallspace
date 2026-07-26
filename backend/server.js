@@ -5,19 +5,15 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Wallhaven Search Route
 app.get('/api/wallpapers', async (req, res) => {
   try {
     const { q, categories, purity, sorting, order, per_page } = req.query;
     
-    // Build Wallhaven API URL
     const wallhavenUrl = `https://wallhaven.cc/api/v1/search?q=${encodeURIComponent(q || 'abstract')}&categories=${categories || '111'}&purity=${purity || '100'}&sorting=${sorting || 'date_added'}&order=${order || 'desc'}&per_page=${per_page || '24'}`;
     
-    // Fetch from Wallhaven API
     const response = await fetch(wallhavenUrl);
     
     if (!response.ok) {
@@ -32,7 +28,6 @@ app.get('/api/wallpapers', async (req, res) => {
   }
 });
 
-// Check Local AI Endpoint Status
 app.get('/api/ai/status', async (req, res) => {
   const modelUrl = req.query.url || 'http://127.0.0.1:7860';
   try {
@@ -56,7 +51,6 @@ app.get('/api/ai/status', async (req, res) => {
   }
 });
 
-// Local AI Image Generation Endpoint
 app.post('/api/ai/generate', async (req, res) => {
   try {
     const { prompt, style, aspect_ratio = '16:9', model_url = 'http://127.0.0.1:7860' } = req.body;
@@ -65,15 +59,13 @@ app.post('/api/ai/generate', async (req, res) => {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    // Combine prompt with selected style preset
     let fullPrompt = prompt;
     if (style && style !== 'None') {
       fullPrompt = `${prompt}, ${style} style, masterpiece, high quality, 8k resolution`;
     }
 
-    // Calculate dimensions based on aspect ratio
     let width = 1024;
-    let height = 576; // 16:9
+    let height = 576;
     if (aspect_ratio === '9:16') {
       width = 576;
       height = 1024;
@@ -85,7 +77,6 @@ app.post('/api/ai/generate', async (req, res) => {
       height = 492;
     }
 
-    // Attempt AUTOMATIC1111 / SD.Next API
     const sdPayload = {
       prompt: fullPrompt,
       negative_prompt: 'blurry, low quality, distorted, bad anatomy, watermark, text',
@@ -98,7 +89,7 @@ app.post('/api/ai/generate', async (req, res) => {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout for AI generation
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
 
       const aiResponse = await fetch(`${model_url}/sdapi/v1/txt2img`, {
         method: 'POST',
@@ -126,7 +117,6 @@ app.post('/api/ai/generate', async (req, res) => {
       console.log('Local AI model server unreachable, serving high-res generative canvas placeholder:', apiErr.message);
     }
 
-    // Fallback high-res generative canvas URL (Pollinations high-res engine)
     const encodedPrompt = encodeURIComponent(`${fullPrompt}, wallpaper, 8k, photorealistic`);
     const fallbackImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${Math.floor(Math.random() * 999999)}&nologo=true`;
 
@@ -144,12 +134,10 @@ app.post('/api/ai/generate', async (req, res) => {
   }
 });
 
-// Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running' });
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`WallSpace backend server running on http://localhost:${PORT}`);
 });
