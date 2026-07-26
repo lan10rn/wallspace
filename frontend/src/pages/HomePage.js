@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import SearchForm from '../components/SearchForm';
 import WallpaperGrid from '../components/WallpaperGrid';
 import { Modal } from '../components/ui/Modal';
-import { AIGeneratorModal } from '../components/AIGeneratorModal';
 import { Sparkles, AlertCircle, RefreshCw, Layers, Wand2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 export default function HomePage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [wallpapers, setWallpapers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,7 +20,6 @@ export default function HomePage() {
   const [purity, setPurity] = useState('100');
   const [sorting, setSorting] = useState('date_added');
   const [selectedWallpaper, setSelectedWallpaper] = useState(null);
-  const [isAIStudioOpen, setIsAIStudioOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
 
   // Toggle Theme (Dark/Light)
@@ -63,18 +64,21 @@ export default function HomePage() {
       }
 
       const result = await response.json();
-      if (result.data) {
-        setWallpapers(result.data);
-      } else {
-        setWallpapers([]);
+      let fetchedWallpapers = result.data || [];
+
+      // Check if user returned from AI Studio with a newly created wallpaper
+      if (location.state?.newWallpaper) {
+        fetchedWallpapers = [location.state.newWallpaper, ...fetchedWallpapers];
       }
+
+      setWallpapers(fetchedWallpapers);
     } catch (err) {
       console.error('API Error:', err);
       setError(`Unable to fetch wallpapers. Ensure backend server is running on ${API_BASE_URL}. (${err.message})`);
     } finally {
       setLoading(false);
     }
-  }, [category, purity, sorting, searchQuery]);
+  }, [category, purity, sorting, searchQuery, location.state]);
 
   // Initial load
   useEffect(() => {
@@ -95,17 +99,13 @@ export default function HomePage() {
     fetchWallpapers('abstract');
   };
 
-  const handleSaveAIToGrid = (newWallpaper) => {
-    setWallpapers((prev) => [newWallpaper, ...prev]);
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-primary/30">
       {/* Navbar Header */}
       <Navbar
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
-        onOpenAIStudio={() => setIsAIStudioOpen(true)}
+        onOpenAIStudio={() => navigate('/ai-studio')}
       />
 
       {/* Main Content Area */}
@@ -134,7 +134,7 @@ export default function HomePage() {
             <div className="flex items-center space-x-3 pt-2">
               <Button
                 variant="default"
-                onClick={() => setIsAIStudioOpen(true)}
+                onClick={() => navigate('/ai-studio')}
                 icon={Wand2}
                 className="px-6 py-2.5 rounded-full font-bold shadow-lg shadow-primary/25"
               >
@@ -210,13 +210,6 @@ export default function HomePage() {
         isOpen={Boolean(selectedWallpaper)}
         onClose={() => setSelectedWallpaper(null)}
         wallpaper={selectedWallpaper}
-      />
-
-      {/* AI Studio Generator Modal */}
-      <AIGeneratorModal
-        isOpen={isAIStudioOpen}
-        onClose={() => setIsAIStudioOpen(false)}
-        onSaveToGrid={handleSaveAIToGrid}
       />
     </div>
   );

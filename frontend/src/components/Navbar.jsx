@@ -1,13 +1,24 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, Sun, Moon, Image as ImageIcon, Globe, Wand2 } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export default function Navbar({ isDarkMode, toggleTheme, onOpenAIStudio }) {
+  const navigate = useNavigate();
+
+  const handleAIStudioClick = () => {
+    if (onOpenAIStudio) {
+      onOpenAIStudio();
+    } else {
+      navigate('/ai-studio');
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-border/40 shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand Logo */}
-        <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => window.location.href = '/'}>
+        <Link to="/" className="flex items-center space-x-3 group">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-primary via-accent to-indigo-400 flex items-center justify-center shadow-lg shadow-primary/25 group-hover:scale-105 transition-transform">
             <ImageIcon className="w-5 h-5 text-white" />
           </div>
@@ -24,7 +35,7 @@ export default function Navbar({ isDarkMode, toggleTheme, onOpenAIStudio }) {
               Discover Wallpapers in Material & Shadcn Aesthetic
             </p>
           </div>
-        </div>
+        </Link>
 
         {/* Action Controls */}
         <div className="flex items-center space-x-3">
@@ -32,7 +43,7 @@ export default function Navbar({ isDarkMode, toggleTheme, onOpenAIStudio }) {
           <Button
             variant="default"
             size="sm"
-            onClick={onOpenAIStudio}
+            onClick={handleAIStudioClick}
             icon={Wand2}
             className="shadow-md shadow-primary/20 text-xs px-4 rounded-full font-bold"
           >
