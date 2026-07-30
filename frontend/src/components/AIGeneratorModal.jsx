@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Wand2, X, Download, Plus, Server, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Sparkles, Wand2, X, Download, Plus, Server, CheckCircle2, AlertCircle, RefreshCw, Cpu } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 
@@ -9,9 +9,11 @@ export function AIGeneratorModal({ isOpen, onClose, onSaveToGrid }) {
   const [prompt, setPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('Cyberpunk');
   const [aspectRatio, setAspectRatio] = useState('16:9');
-  const [modelUrl, setModelUrl] = useState('http://127.0.0.1:7860');
+  const [selectedModel, setSelectedModel] = useState('schnell');
+  const [modelUrl, setModelUrl] = useState('http://127.0.0.1:8000');
   const [modelStatus, setModelStatus] = useState('checking');
-  const [showConfig, setShowConfig] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [showConfig, setShowConfig] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
   const [error, setError] = useState('');
@@ -26,6 +28,12 @@ export function AIGeneratorModal({ isOpen, onClose, onSaveToGrid }) {
     { name: 'Surrealism', icon: '🌌' },
   ];
 
+  const modelPresets = [
+    { id: 'schnell', name: 'FLUX.1 schnell (MLX Apple Silicon)', defaultPort: '8000' },
+    { id: 'sdxl-turbo', name: 'SDXL Turbo', defaultPort: '7860' },
+    { id: 'sd15', name: 'Stable Diffusion v1.5 / Draw Things', defaultPort: '7860' },
+  ];
+
   const aspectRatios = [
     { label: '16:9 (Desktop)', value: '16:9' },
     { label: '9:16 (Mobile)', value: '9:16' },
@@ -34,24 +42,28 @@ export function AIGeneratorModal({ isOpen, onClose, onSaveToGrid }) {
   ];
 
   // Check local AI server status
-  const checkStatus = async () => {
+  const checkStatus = useCallback(async (targetUrl = modelUrl) => {
     setModelStatus('checking');
+    setStatusMessage('Probing local engine...');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/ai/status?url=${encodeURIComponent(modelUrl)}`);
+      const res = await fetch(`${API_BASE_URL}/api/ai/status?url=${encodeURIComponent(targetUrl)}`);
       const data = await res.json();
       if (data.status === 'online') {
         setModelStatus('online');
+        setStatusMessage(data.message || 'Local AI Engine Active');
       } else {
         setModelStatus('offline');
+        setStatusMessage(data.message || 'No active local server');
       }
     } catch {
       setModelStatus('offline');
+      setStatusMessage('Backend unreachable');
     }
-  };
+  }, [modelUrl]);
 
   useEffect(() => {
     if (isOpen) {
-      checkStatus();
+      checkStatus(modelUrl);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -59,7 +71,17 @@ export function AIGeneratorModal({ isOpen, onClose, onSaveToGrid }) {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, modelUrl]);
+  }, [isOpen, modelUrl, checkStatus]);
+
+  const handleModelChange = (modelId) => {
+    setSelectedModel(modelId);
+    const preset = modelPresets.find(m => m.id === modelId);
+    if (preset && modelUrl.includes('7860') && preset.defaultPort !== '7860') {
+      const updatedUrl = `http://127.0.0.1:${preset.defaultPort}`;
+      setModelUrl(updatedUrl);
+      checkStatus(updatedUrl);
+    }
+  };
 
   const handleGenerate = async (e) => {
     if (e) e.preventDefault();
@@ -78,6 +100,7 @@ export function AIGeneratorModal({ isOpen, onClose, onSaveToGrid }) {
           style: selectedStyle,
           aspect_ratio: aspectRatio,
           model_url: modelUrl,
+          model: selectedModel,
         }),
       });
 
@@ -140,11 +163,11 @@ export function AIGeneratorModal({ isOpen, onClose, onSaveToGrid }) {
               <div className="flex items-center space-x-2">
                 <h2 className="text-xl font-extrabold text-foreground tracking-tight">AI Wallpaper Studio</h2>
                 <Badge variant="glow" className="text-[10px]">
-                  <Sparkles className="w-2.5 h-2.5 mr-1" /> Local AI
+                  <Cpu className="w-2.5 h-2.5 mr-1" /> Apple MLX / Local AI
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">
-                Generate custom wallpapers with your local AI model or online inference engine
+                Generate custom wallpapers with MLX (FLUX.1 schnell), Draw Things, or SD.Next
               </p>
             </div>
           </div>
@@ -168,27 +191,49 @@ export function AIGeneratorModal({ isOpen, onClose, onSaveToGrid }) {
 
         {/* Local Server Config Bar (collapsible) */}
         {showConfig && (
-          <div className="p-4 bg-surface-containerHighest/80 border-b border-border/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
-              <span className="font-semibold text-foreground">Local Model Endpoint:</span>
-              <input
-                type="text"
-                value={modelUrl}
-                onChange={(e) => setModelUrl(e.target.value)}
-                className="bg-surface-container px-3 py-1.5 rounded-lg border border-border/40 text-foreground w-60 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="http://127.0.0.1:7860"
-              />
-              <Button variant="ghost" size="sm" onClick={checkStatus} icon={RefreshCw}>
-                Test
-              </Button>
+          <div className="p-4 bg-surface-containerHighest/80 border-b border-border/40 space-y-3 text-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              {/* Model selection dropdown */}
+              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                <span className="font-semibold text-foreground shrink-0">Model Architecture:</span>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => handleModelChange(e.target.value)}
+                  className="bg-surface-container px-3 py-1.5 rounded-lg border border-border/40 text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                >
+                  {modelPresets.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Host & Port input */}
+              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                <span className="font-semibold text-foreground shrink-0">Local URL (Port):</span>
+                <input
+                  type="text"
+                  value={modelUrl}
+                  onChange={(e) => setModelUrl(e.target.value)}
+                  className="bg-surface-container px-3 py-1.5 rounded-lg border border-border/40 text-foreground w-48 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="http://127.0.0.1:8000"
+                />
+                <Button variant="ghost" size="sm" onClick={() => checkStatus(modelUrl)} icon={RefreshCw}>
+                  Ping
+                </Button>
+              </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            {/* Status Indicator */}
+            <div className="flex items-center space-x-2 pt-1 border-t border-border/20 text-[11px]">
               <span className="text-muted-foreground">Status:</span>
               {modelStatus === 'online' ? (
-                <Badge variant="success" icon={CheckCircle2}>SD WebUI Active</Badge>
+                <Badge variant="success" icon={CheckCircle2}>
+                  {statusMessage}
+                </Badge>
               ) : (
-                <Badge variant="secondary" icon={AlertCircle}>Online Fallback Active</Badge>
+                <Badge variant="secondary" icon={AlertCircle}>
+                  {statusMessage} (Online Engine Standby)
+                </Badge>
               )}
             </div>
           </div>
@@ -267,7 +312,7 @@ export function AIGeneratorModal({ isOpen, onClose, onSaveToGrid }) {
                 className="w-full py-3 h-12 text-base font-bold rounded-2xl shadow-xl shadow-primary/20"
                 icon={Sparkles}
               >
-                {generating ? 'Generating AI Image...' : 'Generate Wallpaper'}
+                {generating ? 'Rendering AI Image...' : 'Generate Wallpaper'}
               </Button>
             </div>
 
@@ -278,7 +323,7 @@ export function AIGeneratorModal({ isOpen, onClose, onSaveToGrid }) {
                   <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                   <p className="text-sm font-semibold text-foreground">Rendering Local AI Wallpaper...</p>
                   <p className="text-xs text-muted-foreground max-w-xs">
-                    Applying {selectedStyle} prompt styling on {aspectRatio} canvas.
+                    Running {selectedModel} model on {aspectRatio} canvas.
                   </p>
                 </div>
               ) : generatedImage ? (
